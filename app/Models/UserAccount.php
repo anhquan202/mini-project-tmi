@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Database\Eloquent\Casts\Attribute as CastsAttribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class UserAccount extends Model
+class UserAccount extends Authenticatable
 {
     use HasFactory;
+    use HasApiTokens;
     protected $table = 'user_accounts';
     protected $primaryKey = 'user_account_id';
     public $keyType = 'int';
@@ -31,6 +34,11 @@ class UserAccount extends Model
     //relationship
     public function user()
     {
-        return $this->hasOne(User::class, 'user_id', 'u_id');
+        return $this->hasOne(User::class, 'u_id', 'u_id');
+    }
+
+    public function scopeExist($query, string $username)
+    {
+        return $query->where('username', '=', $username);
     }
 }
