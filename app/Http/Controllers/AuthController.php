@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Services\Auth\IAuthService;
+use App\Services\Mail\IMailService;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(protected IAuthService $iAuthService)
+    public function __construct(protected IAuthService $iAuthServic, protected IMailService $iMailService)
     {
 
     }
@@ -65,5 +66,17 @@ class AuthController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function createVerifyPasswowrdCodeMail(Request $request)
+    {
+        try {
+            $this->iMailService->sendVerifyResetCodeMail($request['email']);
+
+            return response()->json(['message' => 'Mail đã được gửi, vui lòng kiểm  tra']);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()]);
+        }
+
     }
 }

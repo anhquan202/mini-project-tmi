@@ -3,8 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ResetPasswordRequest;
+use App\Jobs\SendPasswordResetCodeMail;
+use App\Mail\ResetPasswordMail;
 use App\Services\Auth\IAuthService;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class UserAccountController extends Controller
 {
@@ -27,8 +32,22 @@ class UserAccountController extends Controller
 
         }
     }
-    public function test()
+    public function resetPassword(ResetPasswordRequest $resetPasswordRequest)
     {
-        echo 1;
+        try {
+            $response = $resetPasswordRequest->validated();
+
+            $resetPassword = $this->iAuthService->resetPassword($response['username'], $response['resetCode']);
+
+            if (!$resetPassword['status']) {
+                return response()->json($resetPassword['error'], 400);
+            }
+
+            return response()->json($resetPassword['message']);
+
+        } catch (\Throwable $th) {
+            return response()->json($th->getMessage(), 500);
+
+        }
     }
 }
