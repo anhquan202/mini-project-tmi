@@ -24,6 +24,11 @@ class UserAccount extends Authenticatable
         'password',
     ];
 
+    protected $hidden = [
+        'password',
+        'created_at',
+        'updated_at'
+    ];
     protected function password()
     {
         return CastsAttribute::make(

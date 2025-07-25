@@ -1,9 +1,12 @@
 <?php
 namespace App\Services\Auth;
 
+use App\Exceptions\FailedVerifyResetPasswordCodeException;
+use App\Exceptions\NotFoundUserException;
+use Illuminate\Support\Facades\Log;
 use App\Models\UserAccount;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Jobs\SendPasswordResetCodeMail;
 
 class AuthService implements IAuthService
 {
@@ -32,6 +35,29 @@ class AuthService implements IAuthService
             'token' => $token,
             'user' => $user,
         ];
+    }
 
+    public function resetPassword(string $username, string $resetCode)
+    {
+        $user = UserAccount::exist($username)->first();
+
+        if (empty($user)) {
+            throw new NotFoundUserException();
+        }
+
+        $verifyCode = session('generatedCode') == $resetCode;
+        if (!$verifyCode) {
+            throw new FailedVerifyResetPasswordCodeException();
+        }
+
+        $newPassword = '12345';
+        $user->update([
+            'password' => Hash::make($newPassword)
+        ]);
+
+        return [
+            'status' => true,
+            'message' => 'Đổi mật khẩu thành công'
+        ];
     }
 }

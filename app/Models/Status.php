@@ -14,4 +14,9 @@ class Status extends Model
         'status_name',
         'description'
     ];
+
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
 }
