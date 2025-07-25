@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\UserStatusEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
@@ -21,9 +22,13 @@ class User extends Model
         'first_name',
         'last_name',
         'address',
-        'gender'
+        'gender',
+        'status_expires_at'
     ];
 
+    protected $casts = [
+        'status_expires_at' => 'datetime',
+    ];
 
     protected static function booted()
     {
@@ -41,4 +46,9 @@ class User extends Model
     {
         return $this->hasOne(Status::class, 'status_id', 'id');
     }
+    public function scopeNotActiveStatus($query)
+    {
+        return $query->whereNotIn('status_id', [UserStatusEnum::ACTIVE->value, UserStatusEnum::INACTIVE->value]);
+    }
+
 }
