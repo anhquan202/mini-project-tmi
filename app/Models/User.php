@@ -26,6 +26,10 @@ class User extends Model
         'status_expires_at'
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
     protected $casts = [
         'status_expires_at' => 'datetime',
     ];
