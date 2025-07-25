@@ -44,7 +44,7 @@ class User extends Model
     //relationship
     public function status()
     {
-        return $this->hasOne(Status::class, 'status_id', 'id');
+        return $this->belongsTo(Status::class, 'status_id', 'id');
     }
     public function scopeNotActiveStatus($query)
     {
