@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\FailedVerifyResetPasswordCodeException;
+use App\Exceptions\NotFoundUserException;
+use App\Helpers\JsonResponseFormat;
+use App\Helpers\PaginationHelper;
+use App\Helpers\PaginationResponse;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserAccountResource;
@@ -39,36 +44,43 @@ class UserAccountController extends Controller
         try {
             $response = $resetPasswordRequest->validated();
 
-            $resetPassword = $this->iAuthService->resetPassword($response['username'], $response['resetCode']);
+            $username = $response['username'];
+            $resetCode = $response['resetCode'];
 
-            if (!$resetPassword['status']) {
-                return response()->json($resetPassword['error'], 400);
-            }
+            $this->iAuthService->resetPassword($username, $resetCode);
 
-            return response()->json($resetPassword['message']);
-
+            return JsonResponseFormat::successResponse(200, 'Đổi mật khẩu thành công', []);
+        } catch (NotFoundUserException | FailedVerifyResetPasswordCodeException $e) {
+            return JsonResponseFormat::errorResponse(400, '', $e->getMessage());
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), 500);
-
+            return JsonResponseFormat::errorResponse(400, 'Lỗi hệ thống', $th->getMessage());
         }
     }
 
     public function showUsersHasAccount()
     {
         try {
-            $data = UserAccount::with('user.status')->get();
+            $data = UserAccount::with('user.status')->paginate(3);
+            $page = (int) request()->query('page', 1);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Danh sách người dùng',
-                'data' => UserAccountResource::collection($data)
-            ]);
+            if ($page > $data->lastPage()) {
+                return JsonResponseFormat::successResponse(
+                    404,
+                    'Danh sách rỗng do vượt quá page tối đa',
+                    ['users' => []]
+                );
+            }
+
+            return JsonResponseFormat::successResponse(
+                200,
+                'Danh sách người dùng',
+                [
+                    'users' => UserAccountResource::collection($data),
+                    'pagination' => PaginationHelper::make($data)
+                ]
+            );
         } catch (\Throwable $th) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi hệ thống',
-                'errors' => $th->getMessage()
-            ]);
+            return JsonResponseFormat::errorResponse(500, 'Lỗi hệ thống', $th->getMessage());
         }
     }
 }

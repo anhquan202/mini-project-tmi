@@ -1,6 +1,8 @@
 <?php
 namespace App\Services\Auth;
 
+use App\Exceptions\FailedVerifyResetPasswordCodeException;
+use App\Exceptions\NotFoundUserException;
 use Illuminate\Support\Facades\Log;
 use App\Models\UserAccount;
 use Illuminate\Support\Facades\Hash;
@@ -33,42 +35,29 @@ class AuthService implements IAuthService
             'token' => $token,
             'user' => $user,
         ];
-
     }
 
     public function resetPassword(string $username, string $resetCode)
     {
-        try {
-            $user = UserAccount::exist($username)->first();
-            if (empty($user)) {
-                return [
-                    'status' => false,
-                    'error' => 'Không tìm thấy người dùng này'
-                ];
-            }
+        $user = UserAccount::exist($username)->first();
 
-            dd(session('generatedCode'));
-            $verifyCode = session('generatedCode') == $resetCode;
-            if (!$verifyCode) {
-                return [
-                    'status' => false,
-                    'error' => 'Mã xác thực không khớp'
-                ];
-            }
-
-            $newPassword = '12345';
-            $user->update([
-                'password' => Hash::make($newPassword)
-            ]);
-
-            return [
-                'status' => true,
-                'message' => 'Đổi mật khẩu thành công'
-            ];
-
-        } catch (\Throwable $th) {
-            Log::error($th->getMessage());
-            return false;
+        if (empty($user)) {
+            throw new NotFoundUserException();
         }
+
+        $verifyCode = session('generatedCode') == $resetCode;
+        if (!$verifyCode) {
+            throw new FailedVerifyResetPasswordCodeException();
+        }
+
+        $newPassword = '12345';
+        $user->update([
+            'password' => Hash::make($newPassword)
+        ]);
+
+        return [
+            'status' => true,
+            'message' => 'Đổi mật khẩu thành công'
+        ];
     }
 }
